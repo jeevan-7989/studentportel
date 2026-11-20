@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Dashboard</title>
+    <link rel="stylesheet" href="/Style/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Student Dashboard</h1>
+
+        <h3>Welcome, {{ user.name }}!</h3>
+
+        <p><strong>Name:</strong> {{ user.name }}</p>
+
+        <p><strong>Email:</strong> {{ user.email }}</p>
+
+        <p><strong>Role:</strong> {{ user.role }}</p>
+
+        <a href="/logout"><button>Logout</button></a>
+    </div>
+
+</body>
+</html>
