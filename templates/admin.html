@@ -1,0 +1,116 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="/Style/style.css">
+</head>
+<body>
+
+    <div class="container">
+
+        <h1>Admin Dashboard</h1>
+
+        <h3>Welcome, {{ user.name }}!</h3>
+        <p>Manage registered users from here.</p>
+
+        <hr>
+        <h2>User Statistics</h2>
+
+        <p><strong>Total Users:</strong> {{ total_users }}</p>
+        <p><strong>Total Students:</strong> {{ total_students }}</p>
+        <p><strong>Total Admins:</strong> {{ total_admins }}</p>
+
+        <!-- User Management Table -->
+        <h2>Manage Users</h2>
+
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Change Role</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for student in users %}
+
+                <tr>
+                    <td>{{ student.id }}</td>
+                    <td>{{ student.name }}</td>
+                    <td>{{ student.email }}</td>
+                    <td>{{ student.role }}</td>
+
+                    <!-- Change Role -->
+                    <td>
+                        {% if student.id != user.id %}
+                        <form action="/admin/change-role/{{ student.id }}" method="post">
+
+                            <select name="role">
+                                <option value="student"
+                                    {% if student.role == "student" %}selected{% endif %}>
+                                    Student
+                                </option>
+
+                                <option value="admin"
+                                    {% if student.role == "admin" %}selected{% endif %}>
+                                    Admin
+                                </option>
+                            </select>
+
+                            <button type="submit">Update</button>
+                        </form>
+                        {% else %}
+                            Current Admin
+                        {% endif %}
+                    </td>
+
+                    <!-- Delete User -->
+                    <td>
+                        {% if student.id != user.id %}
+                        <form
+                            action="/admin/delete/{{ student.id }}"
+                            method="post"
+                            onsubmit="return confirm('Are you sure you want to delete this user?');"
+                        >
+                            <button type="submit">Delete</button>
+                        </form>
+                        {% else %}
+                            Protected
+                        {% endif %}
+                    </td>
+                </tr>
+
+                {% else %}
+
+                <tr>
+                    <td colspan="6">No users found.</td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+        </table>
+
+        <br>
+
+        <!-- Navigation -->
+        <a href="/dashboard">
+            <button type="button">Back to Dashboard</button>
+        </a>
+
+        <a href="/logout">
+            <button type="button">Logout</button>
+        </a>
+
+    </div>
+
+</body>
+</html>

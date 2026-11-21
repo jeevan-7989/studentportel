@@ -1,12 +1,9 @@
-
 from fastapi import FastAPI, Request, Form, Depends, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
-
 from security import hash_password, verify_password
-
 from sqlalchemy.orm import Session
 from database import Base, get_db, engine, User
 import os
@@ -14,9 +11,13 @@ from dotenv import load_dotenv
 app = FastAPI()
 
 templates = Jinja2Templates(directory="templates")
+
 load_dotenv()
 
 SECRET_KEY = os.getenv("SECRET_KEY")
+print(SECRET_KEY)
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY is missing in .env")
 
 app.add_middleware(
     SessionMiddleware,
@@ -171,6 +172,106 @@ def dashboard(
         context={"user": user}
     )
 
+@app.get("/admin")
+def admin(request: Request, db: Session = Depends(get_db)):
+
+    user_id = request.session.get("user_id")
+
+    if not user_id:
+        return RedirectResponse(url="/login", status_code=303)
+
+    user = db.query(User).filter(User.id == user_id).first()
+
+    if not user:
+        request.session.clear()
+        return RedirectResponse(url="/login", status_code=303)
+
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Access Denied")
+
+    users = db.query(User).all()
+
+    total_users = db.query(User).count()
+
+    total_students = db.query(User).filter(
+        User.role == "student"
+    ).count()
+
+    total_admins = db.query(User).filter(
+        User.role == "admin"
+    ).count()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="admin.html",
+        context={
+            "user": user,
+            "users": users,
+            "total_users": total_users,
+            "total_students": total_students,
+            "total_admins": total_admins
+        }
+    )
+@app.post("/admin/update/{user_id}")
+def update_role(
+    user_id: int,
+    request: Request,
+    role: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    admin_id = request.session.get("user_id")
+
+    if not admin_id:
+        return RedirectResponse("/login", status_code=303)
+
+    admin_user = db.query(User).filter(User.id == admin_id).first()
+
+    if not admin_user or admin_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Access Denied")
+
+    target_user = db.query(User).filter(User.id == user_id).first()
+
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if target_user.id == admin_user.id:
+        raise HTTPException(status_code=400, detail="You cannot change your own role")
+
+    if role not in ["student", "admin"]:
+        raise HTTPException(status_code=400, detail="Invalid role")
+
+    target_user.role = role
+    db.commit()
+
+    return RedirectResponse("/admin", status_code=303)
+@app.post("/admin/delete/{user_id}")
+def delete_user(
+    user_id: int,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    admin_id = request.session.get("user_id")
+
+    if not admin_id:
+        return RedirectResponse("/login", status_code=303)
+
+    admin_user = db.query(User).filter(User.id == admin_id).first()
+
+    if not admin_user or admin_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Access Denied")
+
+    target_user = db.query(User).filter(User.id == user_id).first()
+
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if target_user.id == admin_user.id:
+        raise HTTPException(status_code=400, detail="You cannot delete yourself")
+
+    db.delete(target_user)
+    db.commit()
+
+    return RedirectResponse("/admin", status_code=303)
 @app.get("/logout")
 def logout(request: Request):
 
