@@ -50,7 +50,6 @@ def register_page(request: Request):
         name="register.html"
     )
 
-
 @app.post("/register")
 def register(
     request: Request,
@@ -71,9 +70,7 @@ def register(
             context={"error": " all fields are required"}
         )
 
-    existing_user = db.query(User).filter(
-        User.email == email
-    ).first()
+    existing_user = db.query(User).filter(User.email == email).first()
 
     if existing_user:
 
@@ -116,15 +113,12 @@ def login(
 
     email = email
 
-    user = db.query(User).filter(
-        User.email == email
-    ).first()
+    user = db.query(User).filter(User.email == email).first()
 
     if user is None or not verify_password(
         password,
         user.password_hash
     ):
-
         return templates.TemplateResponse(
             request=request,
             name="login.html",
